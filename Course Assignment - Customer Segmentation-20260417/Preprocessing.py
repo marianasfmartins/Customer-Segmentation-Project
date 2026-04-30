@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
+from sklearn.impute import KNNImputer
 
 def preprocess_data(df):
     
@@ -21,7 +21,7 @@ def preprocess_data(df):
     df.drop(columns=[col for col in drop_cols if col in df.columns], inplace=True)
     
     # --- 2. Feature Engineering ---
-    df['age'] = 2025 - df['birth_year']
+    df['age'] = 2026 - df['birth_year']
     df.drop(columns=['birth_year'], inplace=True)
     
     df['total_kids'] = df['kids_home'] + df['teens_home']
@@ -33,24 +33,10 @@ def preprocess_data(df):
     # --- 3. Fix percentage_of_products_bought_promotion ---
     df['percentage_of_products_bought_promotion'] = df['percentage_of_products_bought_promotion'].clip(lower=0)
 
-    # --- 4. Impute missing values ---
+    # --- 4. Impute missing values using KNN ---
     num_cols = df.select_dtypes(include=np.number).columns.tolist()
-    imputer = SimpleImputer(strategy='median')
+    imputer = KNNImputer(n_neighbors=5)
     df[num_cols] = imputer.fit_transform(df[num_cols])
 
     # --- 5. Log transform right-skewed features ---
-    log_cols = [col for col in spend_cols if col != 'lifetime_spend_vegetables'] + ['total_lifetime_spend']
-    for col in log_cols:
-        if col in df.columns:
-            df[col] = np.log1p(df[col])
-
-    # --- 6. One-Hot Encode categorical variables ---
-    if 'customer_gender' in df.columns:
-        df = pd.get_dummies(df, columns=['customer_gender'], drop_first=True)
-
-    # --- 7. Scale all features ---
-    final_num_cols = df.select_dtypes(include=np.number).columns.tolist()
-    scaler = StandardScaler()
-    df[final_num_cols] = scaler.fit_transform(df[final_num_cols])
-
-    return df
+    log_cols = [col for col in spend_cols if col != 'lifetime_spend_vegetabl
