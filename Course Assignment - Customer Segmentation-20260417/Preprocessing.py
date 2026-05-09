@@ -52,7 +52,3 @@ def preprocess_data(df):
 
     return df
 
-
-df = pd.read_csv('Course Assignment - Customer Segmentation-20260417\data_eda.csv')
-df_processed = preprocess_data(df)
-df_processed
