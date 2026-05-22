@@ -5,9 +5,6 @@ from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 from sklearn.neighbors import NearestNeighbors
 from scipy.cluster.hierarchy import dendrogram, linkage
-
-
-
 # --- 1. Find optimal k for K-Means ---
 def find_optimal_k(df, k_range=range(2, 11)):
 
