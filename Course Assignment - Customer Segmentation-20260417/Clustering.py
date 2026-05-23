@@ -110,6 +110,121 @@ def fit_dbscan(df, eps, min_samples=5):
     return dbscan, labels
 
 
+
+
+# --- 5. Self-Organizing Map (SOM) ---
+def _initialize_som_weights(data, map_shape, random_state):
+    rng = np.random.default_rng(random_state)
+    min_vals = data.min(axis=0)
+    max_vals = data.max(axis=0)
+    return rng.uniform(min_vals, max_vals, size=(map_shape[0], map_shape[1], data.shape[1]))
+
+
+def _find_bmu(weights, sample):
+    diff = weights - sample
+    dist_sq = np.sum(diff**2, axis=2)
+    return np.unravel_index(np.argmin(dist_sq), dist_sq.shape)
+
+
+def _som_learning_rate(initial_lr, iteration, n_iterations):
+    return initial_lr * np.exp(-iteration / n_iterations)
+
+
+def _som_radius(initial_sigma, iteration, time_constant):
+    return initial_sigma * np.exp(-iteration / time_constant)
+
+
+def plot_som_u_matrix(weights):
+    """Plot the SOM U-Matrix showing average neighbor distances."""
+    m, n, dim = weights.shape
+    u_matrix = np.zeros((m, n))
+
+    for i in range(m):
+        for j in range(n):
+            neighbors = []
+            if i > 0:
+                neighbors.append(weights[i - 1, j])
+            if i < m - 1:
+                neighbors.append(weights[i + 1, j])
+            if j > 0:
+                neighbors.append(weights[i, j - 1])
+            if j < n - 1:
+                neighbors.append(weights[i, j + 1])
+            if neighbors:
+                distances = np.linalg.norm(weights[i, j] - np.vstack(neighbors), axis=1)
+                u_matrix[i, j] = distances.mean()
+
+    plt.figure(figsize=(8, 6))
+    plt.imshow(u_matrix, cmap='viridis', origin='lower')
+    plt.colorbar(label='Average distance to neighbors')
+    plt.title('SOM U-Matrix')
+    plt.xlabel('Map x')
+    plt.ylabel('Map y')
+    plt.tight_layout()
+    plt.show()
+
+    return u_matrix
+
+
+def fit_som(df, map_shape=(10, 10), n_iterations=1000, learning_rate=0.5, sigma=None, random_state=42, plot_u_matrix=False):
+    """Train a Self-Organizing Map and return BMU assignments for each sample."""
+    data = df.values.astype(float)
+
+    if sigma is None:
+        sigma = max(map_shape) / 2.0
+
+    weights = _initialize_som_weights(data, map_shape, random_state)
+    time_constant = n_iterations / np.log(sigma) if sigma > 1 else n_iterations
+
+    grid_x = np.arange(map_shape[0])[:, np.newaxis]
+    grid_y = np.arange(map_shape[1])[np.newaxis, :]
+
+    for iteration in range(n_iterations):
+        lr = _som_learning_rate(learning_rate, iteration, n_iterations)
+        radius = _som_radius(sigma, iteration, time_constant)
+        radius_sq = radius ** 2 if radius > 0 else 1.0
+
+        for sample in data:
+            bmu_i, bmu_j = _find_bmu(weights, sample)
+            distance_sq = (grid_x - bmu_i) ** 2 + (grid_y - bmu_j) ** 2
+            neighborhood = np.exp(-distance_sq / (2 * radius_sq))
+            influence = neighborhood[..., np.newaxis]
+            weights += lr * influence * (sample - weights)
+
+    bmu_indices = np.array([_find_bmu(weights, x) for x in data])
+    labels = bmu_indices[:, 0] * map_shape[1] + bmu_indices[:, 1]
+
+    if plot_u_matrix:
+        plot_som_u_matrix(weights)
+
+    print(f"Trained SOM with map shape {map_shape} and {n_iterations} iterations.")
+    print(f"Unique BMU clusters: {len(np.unique(labels))}")
+
+    return {
+        'weights': weights,
+        'labels': labels,
+        'bmu_indices': bmu_indices,
+        'map_shape': map_shape,
+    }
+
+
+def get_som_cluster_labels(weights, n_clusters, random_state=42):
+    """Cluster SOM neurons into named groups and return the neuron cluster map."""
+    neurons = weights.reshape(-1, weights.shape[2])
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
+    neuron_labels = kmeans.fit_predict(neurons)
+    return neuron_labels.reshape(weights.shape[0], weights.shape[1])
+
+
+def assign_som_clusters(weights, df, n_clusters, random_state=42):
+    """Assign each data sample to a SOM neuron cluster label."""
+    neuron_labels = get_som_cluster_labels(weights, n_clusters, random_state)
+    data = df.values.astype(float)
+    bmu_indices = np.array([_find_bmu(weights, x) for x in data])
+    labels = np.array([neuron_labels[i, j] for i, j in bmu_indices])
+    return labels, neuron_labels
+
+
 # --- 5. Compare all models ---
 def compare_models(df, labels_dict):
 
