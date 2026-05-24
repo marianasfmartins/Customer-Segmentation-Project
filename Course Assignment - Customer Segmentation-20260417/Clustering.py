@@ -5,6 +5,7 @@ from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
 from sklearn.metrics import silhouette_score
 from sklearn.neighbors import NearestNeighbors
 from scipy.cluster.hierarchy import dendrogram, linkage
+
 # --- 1. Find optimal k for K-Means ---
 def find_optimal_k(df, k_range=range(2, 11)):
 
@@ -108,7 +109,6 @@ def fit_dbscan(df, eps, min_samples=5):
     print(f"Cluster sizes:\n{pd.Series(labels).value_counts().sort_index()}")
 
     return dbscan, labels
-
 
 
 
@@ -225,7 +225,7 @@ def assign_som_clusters(weights, df, n_clusters, random_state=42):
     return labels, neuron_labels
 
 
-# --- 5. Compare all models ---
+# --- 6. Compare all models ---
 def compare_models(df, labels_dict):
 
     print("\n--- Model Comparison (Silhouette Scores) ---")
