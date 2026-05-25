@@ -46,7 +46,12 @@ def fit_kmeans(df, n_clusters):
     print(f"Silhouette Score: {silhouette_score(df, labels):.4f}")
     print(f"Cluster sizes:\n{pd.Series(labels).value_counts().sort_index()}")
 
-    return kmeans, labels
+    # Create cluster profile with cluster numbers as columns and variables as rows
+    numeric_df = df.select_dtypes(include=[np.number])
+    cluster_profile = numeric_df.groupby(labels).mean().T
+    cluster_profile.columns = [f"cluster_{int(c)}" for c in cluster_profile.columns]
+
+    return kmeans, labels, cluster_profile
 
 
 # --- 3. Hierarchical Clustering ---

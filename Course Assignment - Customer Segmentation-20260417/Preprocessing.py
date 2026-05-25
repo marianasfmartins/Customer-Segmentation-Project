@@ -10,7 +10,7 @@ def preprocess_data_standardscaler(df):
     drop_cols = [
         'customer_id',
         'customer_name', 'has_loyalty_card',
-        'customer_gender', 'geometry'
+        'female', 'latitude', 'longitude'
     ]
     df.drop(columns=[col for col in drop_cols if col in df.columns], inplace=True)
 
@@ -40,7 +40,7 @@ def preprocess_data_robustscaler(df):
     drop_cols = [
         'customer_id',
         'customer_name', 'has_loyalty_card',
-        'customer_gender', 'geometry'
+        'female', 'latitude', 'longitude'
     ]
     df.drop(columns=[col for col in drop_cols if col in df.columns], inplace=True)
 
@@ -67,7 +67,7 @@ def preprocess_data_minmaxscaler(df):
     drop_cols = [
         'customer_id',
         'customer_name', 'has_loyalty_card',
-        'customer_gender', 'geometry'
+        'female', 'latitude', 'longitude'
     ]
     df.drop(columns=[col for col in drop_cols if col in df.columns], inplace=True)
 
