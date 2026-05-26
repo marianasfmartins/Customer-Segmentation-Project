@@ -51,7 +51,7 @@ def fit_kmeans(df, n_clusters):
     cluster_profile = numeric_df.groupby(labels).mean().T
     cluster_profile.columns = [f"cluster_{int(c)}" for c in cluster_profile.columns]
 
-    return kmeans, labels, cluster_profile
+    return cluster_profile
 
 
 # --- 3. Hierarchical Clustering ---
