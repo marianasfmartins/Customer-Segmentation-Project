@@ -1,8 +1,8 @@
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
+import umap
+from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering, MeanShift
 from sklearn.metrics import silhouette_score
 from sklearn.neighbors import NearestNeighbors
 from scipy.cluster.hierarchy import dendrogram, linkage
@@ -247,5 +247,28 @@ def compare_models(df, labels_dict):
 
     return results
 
+# --- Mean Shift ---
+def fit_meanshift(df, bandwidth=None):
+    """Fit a Mean Shift model and return labels."""
+    meanshift = MeanShift(bandwidth=bandwidth)
+    labels = meanshift.fit_predict(df)
+    print(f"MeanShift found {len(np.unique(labels))} clusters.")
+    return labels
+
+# --- UMAP ---
+def plot_umap(df, labels, title="UMAP Projection", n_neighbors=15, min_dist=0.1, random_state=42):
+    """Reduce data to 2D using UMAP and plot the cluster assignments."""
+    reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, random_state=random_state)
+    embedding = reducer.fit_transform(df)
+    
+    plt.figure(figsize=(8, 6))
+    scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=labels, cmap='viridis', s=10)
+    plt.title(title)
+    plt.colorbar(scatter, label='Cluster')
+    plt.xlabel('UMAP 1')
+    plt.ylabel('UMAP 2')
+    plt.tight_layout()
+    plt.show()
+    return embedding
 
 
