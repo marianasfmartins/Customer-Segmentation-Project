@@ -221,7 +221,6 @@ def get_som_cluster_labels(weights, n_clusters, random_state=42):
     neuron_labels = kmeans.fit_predict(neurons)
     return neuron_labels.reshape(weights.shape[0], weights.shape[1])
 
-
 def assign_som_clusters(weights, df, n_clusters, random_state=42):
     """Assign each data sample to a SOM neuron cluster label."""
     neuron_labels = get_som_cluster_labels(weights, n_clusters, random_state)
