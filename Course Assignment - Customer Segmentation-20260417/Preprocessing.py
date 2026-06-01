@@ -95,10 +95,9 @@ def cluster_analysis(df):
     Preprocesses data for cluster analysis.
     Returns preprocessed data with true (unscaled) values and all variables (categorical + numeric).
     """    
-    # Impute missing values using KNN ---
+    # Impute missing values using median fill (extremely fast and robust for profiling) ---
     num_cols = df.select_dtypes(include=np.number).columns.tolist()
-    imputer = KNNImputer(n_neighbors=5)
-    df[num_cols] = imputer.fit_transform(df[num_cols])
+    df[num_cols] = df[num_cols].fillna(df[num_cols].median())
 
     # Identify spend columns dynamically from the dataframe
     spend_cols = [col for col in df.columns if 'lifetime_spend' in col]

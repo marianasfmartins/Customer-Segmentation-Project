@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import umap
 from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering, MeanShift
+from sklearn.manifold import TSNE
 from sklearn.metrics import silhouette_score
 from sklearn.neighbors import NearestNeighbors
 from scipy.cluster.hierarchy import dendrogram, linkage
@@ -237,13 +238,33 @@ def compare_models(df, labels_dict):
     results = {}
 
     for model_name, labels in labels_dict.items():
-        mask = labels != -1
+        labels = np.asarray(labels)
+        if labels.shape[0] != df.shape[0]:
+            raise ValueError(
+                f"Label length mismatch for {model_name}: {labels.shape[0]} != {df.shape[0]}"
+            )
+
+        if -1 in labels:
+            mask = labels != -1
+        else:
+            mask = np.ones(len(labels), dtype=bool)
+
+        unique_labels = np.unique(labels[mask])
+        if mask.sum() < 2 or len(unique_labels) < 2:
+            print(f"{model_name}: Silhouette score not applicable (insufficient clusters or only noise).")
+            results[model_name] = np.nan
+            continue
+
         score = silhouette_score(df[mask], labels[mask])
         results[model_name] = score
         print(f"{model_name}: {score:.4f}")
 
-    best_model = max(results, key=results.get)
-    print(f"\nBest model: {best_model} with silhouette score {results[best_model]:.4f}")
+    valid_results = {k: v for k, v in results.items() if not np.isnan(v)}
+    if valid_results:
+        best_model = max(valid_results, key=valid_results.get)
+        print(f"\nBest model: {best_model} with silhouette score {valid_results[best_model]:.4f}")
+    else:
+        print("\nBest model: None (no valid silhouette scores could be computed)")
 
     return results
 
@@ -267,6 +288,35 @@ def plot_umap(df, labels, title="UMAP Projection", n_neighbors=15, min_dist=0.1,
     plt.colorbar(scatter, label='Cluster')
     plt.xlabel('UMAP 1')
     plt.ylabel('UMAP 2')
+    plt.tight_layout()
+    plt.show()
+    return embedding
+
+
+def plot_tsne(df, labels, title="t-SNE Projection", perplexity=30, random_state=42, max_iter=1000):
+    """Reduce data to 2D using t-SNE and plot the cluster assignments.
+
+    Uses `max_iter` for compatibility with scikit-learn versions that
+    expect that parameter name instead of `n_iter`.
+    """
+    data = df.values.astype(float)
+    tsne = TSNE(
+        n_components=2,
+        perplexity=perplexity,
+        random_state=random_state,
+        init='pca',
+        max_iter=max_iter,
+        learning_rate='auto',
+        metric='euclidean'
+    )
+    embedding = tsne.fit_transform(data)
+
+    plt.figure(figsize=(8, 6))
+    scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=labels, cmap='viridis', s=10)
+    plt.title(title)
+    plt.colorbar(scatter, label='Cluster')
+    plt.xlabel('t-SNE 1')
+    plt.ylabel('t-SNE 2')
     plt.tight_layout()
     plt.show()
     return embedding
